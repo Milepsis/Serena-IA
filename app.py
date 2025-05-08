@@ -20,12 +20,12 @@ lemmatizer = WordNetLemmatizer()
 violence_keywords = {
     "verbale": [
         "connard", "connasse", "salope", "va te faire foutre", "ferme ta gueule",
-        "bouffon", "bouffonne", "merdeux", "merdeuse", "ta gueule", "débile", "débile mentale",
-        "crétin", "crétine", "imbécile", "imbécile heureuse",
-        "enculé", "enculée", "fils de pute", "fille de pute",
-        "gros con", "grosse conne",
-        "t'es nulle", "t'es bon à rien", "t'es bonne à rien", "tu ne sais rien faire", "tu es incapable",
-        "tu me fatigues", "tu ne sers à rien", "t'es qu'une merde", "t'es inutile"
+        "bouffon", "bouffonne", "merdeux", "merdeuse", "ta gueule",
+        "débile", "débile mentale", "crétin", "crétine", "imbécile", "imbécile heureuse",
+        "enculé", "enculée", "fils de pute", "fille de pute", "pute", "p*te",
+        "gros con", "grosse conne", "t'es nulle", "t'es bon à rien", "t'es bonne à rien",
+        "tu ne sais rien faire", "tu es incapable", "tu me fatigues", "tu ne sers à rien",
+        "t'es qu'une merde", "t'es inutile"
     ],
     "psychologique": [
         "tu vas voir", "je vais te faire payer", "personne ne te croira",
@@ -49,6 +49,17 @@ violence_keywords = {
         "🔪", "💦", "👊", "🔫", "😡", "🍆", "😠", "🖕", "🔥"
     ]
 }
+
+def extract_gravity_level(text: str) -> str:
+    levels = {
+        "léger": ("🟢", "#e6f4ea"),
+        "modéré": ("🟠", "#fff4e5"),
+        "sévère": ("🔴", "#fdecea")
+    }
+    for level, (icon, color) in levels.items():
+        if level in text.lower():
+            return icon, color, f"{icon} Gravité : {level.capitalize()}"
+    return "⚪", "#f5f5f5", "⚪ Gravité non précisée"
 
 def detect_violence(text: str, keywords: Dict[str, list]) -> Dict[str, list]:
     text = text.lower()
@@ -88,64 +99,75 @@ Réponds en français sous cette structure :
             ],
             temperature=0.3
         )
-        st.success("✅ Réponse GPT reçue avec succès")
         return response.choices[0].message.content.strip()
     except Exception as e:
-        st.error("❌ Erreur lors de l'appel à GPT")
-        st.exception(e)
-        return "⚠️ L'analyse n'a pas pu être effectuée. Vérifie ta clé ou ta connexion réseau."
+        return f"❌ Erreur GPT : {e}"
 
-def create_download_link(text: str, filename: str = "analyse_serena.txt") -> str:
-    b64 = base64.b64encode(text.encode()).decode()
-    return f'<a href="data:file/txt;base64,{b64}" download="{filename}">📥 Télécharger l\'analyse complète</a>'
-
-# Interface utilisateur
+# Interface utilisateur stylisée
 st.set_page_config(page_title="Serena - IA protectrice", page_icon="🛡️", layout="centered")
+
+st.markdown("""
+    <style>
+    body { background-color: #f4f0fa; }
+    .result-box {
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        margin-top: 20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("🛡️ Serena - Détection protectrice de contenu violent")
 
 st.markdown("""
 Bienvenue sur le prototype de **Serena**, une intelligence artificielle conçue pour protéger les victimes dans le cadre des procédures judiciaires.
-
-💬 Collez un message ou une transcription : l'IA identifiera les éléments violents selon leur nature (verbale, psychologique, physique, sexuelle ou emoji) et signalera les contenus sensibles pour permettre une analyse judiciaire sans réexposition traumatique.
 """)
 
 with st.form("formulaire_analyse"):
-    user_input = st.text_area("📝 Message ou transcription à analyser :", height=200, placeholder="Ex: 'Tu vas le regretter, je vais te faire payer tout ça.'")
+    user_input = st.text_area("📥 Message ou transcription à analyser :", height=200, placeholder="Ex: 'Tu vas le regretter, je vais te faire payer tout ça.'")
     submitted = st.form_submit_button("Analyser le contenu")
 
 if submitted and user_input:
     result = detect_violence(user_input, violence_keywords)
-
-    st.divider()
+    st.markdown("---")
     if result:
-        st.markdown("## ⚠️ Contenu potentiellement violent détecté (base lexicale et emojis)")
+        st.markdown("### ⚠️ Contenu potentiellement violent détecté")
         for cat, words in result.items():
             st.markdown(f"**{cat.capitalize()}** : {', '.join(words)}")
-        st.warning("Ce message contient des éléments violents explicites ou implicites.")
+        st.warning("🚨 Ce message contient des éléments violents explicites ou implicites.")
     else:
-        st.success("✅ Aucun contenu violent explicite détecté dans ce message.")
+        st.success("✅ Aucun contenu violent explicite détecté.")
 
     st.markdown("---")
-    st.markdown("## 🤖 Analyse sémantique protectrice par GPT")
+    st.markdown("### 🤖 Analyse sémantique protectrice par GPT")
     with st.spinner("Analyse en cours..."):
         gpt_result = gpt_analysis(user_input)
-        st.text_area("🧠 Résultat de l'analyse GPT", gpt_result, height=250)
-
-        download_link = create_download_link(gpt_result)
-        st.markdown(download_link, unsafe_allow_html=True)
+        icon, bgcolor, gravity_display = extract_gravity_level(gpt_result)
+        st.markdown(f"""
+            <div class='result-box' style='background-color:{bgcolor};'>
+            🧠 <b>Résultat de l'analyse :</b><br><br>
+            <pre>{gpt_result}</pre>
+            <p><b>{gravity_display}</b></p>
+            </div>
+        """, unsafe_allow_html=True)
+        st.download_button("📥 Télécharger l'analyse", gpt_result, file_name="analyse_serena.txt")
 else:
     st.info("Entrez un message ci-dessus pour commencer l'analyse.")
 
-# 🔧 Test manuel GPT visible
 st.markdown("---")
-st.markdown("### 🔍 Test manuel GPT")
+st.markdown("### 🧪 Test manuel GPT")
 if st.button("📡 Tester GPT à part"):
     with st.spinner("Appel de test à GPT..."):
-        try:
-            test_text = "Tu vas le regretter, tu verras ce que je vais te faire."
-            result = gpt_analysis(test_text)
-            st.text_area("Résultat du test GPT", result, height=200)
-        except Exception as e:
-            st.error("❌ Erreur lors de l'appel GPT")
-            st.exception(e)
+        test_text = "Tu vas le regretter, tu verras ce que je vais te faire."
+        result = gpt_analysis(test_text)
+        icon, bgcolor, gravity_display = extract_gravity_level(result)
+        st.markdown(f"""
+            <div class='result-box' style='background-color:{bgcolor};'>
+            🧠 <b>Réponse GPT (test) :</b><br><br>
+            <pre>{result}</pre>
+            <p><b>{gravity_display}</b></p>
+            </div>
+        """, unsafe_allow_html=True)
+        st.download_button("📥 Télécharger la réponse GPT", result, file_name="test_gpt.txt")
 
