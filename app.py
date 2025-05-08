@@ -50,7 +50,12 @@ violence_keywords = {
     ]
 }
 
-def extract_gravity_level(text: str) -> str:
+def format_gpt_result(result: str) -> str:
+    lines = result.split("- ")
+    formatted = "\n\n".join(f"- {line.strip()}" for line in lines if line.strip())
+    return formatted
+
+def extract_gravity_level(text: str):
     levels = {
         "léger": ("🟢", "#e6f4ea"),
         "modéré": ("🟠", "#fff4e5"),
@@ -144,14 +149,15 @@ if submitted and user_input:
     with st.spinner("Analyse en cours..."):
         gpt_result = gpt_analysis(user_input)
         icon, bgcolor, gravity_display = extract_gravity_level(gpt_result)
+        formatted = format_gpt_result(gpt_result)
         st.markdown(f"""
             <div class='result-box' style='background-color:{bgcolor};'>
             🧠 <b>Résultat de l'analyse :</b><br><br>
-            <pre>{gpt_result}</pre>
+            <pre>{formatted}</pre>
             <p><b>{gravity_display}</b></p>
             </div>
         """, unsafe_allow_html=True)
-        st.download_button("📥 Télécharger l'analyse", gpt_result, file_name="analyse_serena.txt")
+        st.download_button("📥 Télécharger l'analyse", formatted, file_name="analyse_serena.txt")
 else:
     st.info("Entrez un message ci-dessus pour commencer l'analyse.")
 
@@ -162,12 +168,13 @@ if st.button("📡 Tester GPT à part"):
         test_text = "Tu vas le regretter, tu verras ce que je vais te faire."
         result = gpt_analysis(test_text)
         icon, bgcolor, gravity_display = extract_gravity_level(result)
+        formatted = format_gpt_result(result)
         st.markdown(f"""
             <div class='result-box' style='background-color:{bgcolor};'>
             🧠 <b>Réponse GPT (test) :</b><br><br>
-            <pre>{result}</pre>
+            <pre>{formatted}</pre>
             <p><b>{gravity_display}</b></p>
             </div>
         """, unsafe_allow_html=True)
-        st.download_button("📥 Télécharger la réponse GPT", result, file_name="test_gpt.txt")
+        st.download_button("📥 Télécharger la réponse GPT", formatted, file_name="test_gpt.txt")
 
