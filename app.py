@@ -1,6 +1,6 @@
 import os
 import streamlit as st
-import openai
+from openai import OpenAI
 import re
 import base64
 import nltk
@@ -9,7 +9,7 @@ from typing import Dict
 
 # Sécurisation de la clé API via les secrets de Streamlit ou les variables d'environnement
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else os.getenv("OPENAI_API_KEY")
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Téléchargement des ressources NLTK au besoin
 nltk.download('wordnet', quiet=True)
@@ -148,3 +148,4 @@ if st.button("📡 Tester GPT à part"):
         except Exception as e:
             st.error("❌ Erreur lors de l'appel GPT")
             st.exception(e)
+
