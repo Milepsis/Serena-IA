@@ -9,7 +9,7 @@ from typing import Dict
 
 # Sécurisation de la clé API via les secrets de Streamlit ou les variables d'environnement
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else os.getenv("OPENAI_API_KEY")
-openai.api_key = OPENAI_API_KEY
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Téléchargement des ressources NLTK au besoin
 nltk.download('wordnet', quiet=True)
@@ -80,7 +80,7 @@ Réponds en français sous cette structure :
 - Risque immédiat : ...
 """
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Tu es une IA protectrice des victimes dans un cadre judiciaire."},
